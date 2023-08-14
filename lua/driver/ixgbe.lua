@@ -46,22 +46,23 @@ dev.maxPacketRate = 16.4 -- maximum rate with illegally small packets
 -- ixgbe does not count bytes dropped due to buffer space and the packet drop counters seem to be empty
 -- however, we want to count all packets *at the NIC level* regardless whether they were fetched by the driver or not
 -- this behavior is consistent with other drivers and more useful
-function dev:getRxStats()
-	-- these counters are clear-on-read
-	self.rxPkts = (self.rxPkts or 0ULL) + dpdkc.read_reg32(self.id, GPRC)
-	self.rxBytes = (self.rxBytes or 0ULL) + dpdkc.read_reg32(self.id, GORCL) + dpdkc.read_reg32(self.id, GORCH) * 2^32
-	return tonumber(self.rxPkts), tonumber(self.rxBytes)
-end
+-- Let's hope that the issues were fixed in DPDK
+-- function dev:getRxStats()
+-- 	-- these counters are clear-on-read
+-- 	self.rxPkts = (self.rxPkts or 0ULL) + dpdkc.read_reg32(self.id, GPRC)
+-- 	self.rxBytes = (self.rxBytes or 0ULL) + dpdkc.read_reg32(self.id, GORCL) + dpdkc.read_reg32(self.id, GORCH) * 2^32
+-- 	return tonumber(self.rxPkts), tonumber(self.rxBytes)
+-- end
 
 -- clear RX counters.  We want to clear the s/w statistics and also reg read to clear the h/w level
-function dev:clearRxStats()
-	dpdkc.read_reg32(self.id, GPRC)
-	dpdkc.read_reg32(self.id, GORCL)
-	dpdkc.read_reg32(self.id, GORCH)
-	self.rxPkts = 0ULL
-	self.rxBytes = 0ULL
-	return
-end
+-- function dev:clearRxStats()
+-- 	dpdkc.read_reg32(self.id, GPRC)
+-- 	dpdkc.read_reg32(self.id, GORCL)
+-- 	dpdkc.read_reg32(self.id, GORCH)
+-- 	self.rxPkts = 0ULL
+-- 	self.rxBytes = 0ULL
+-- 	return
+-- end
 
 -- necessary because of clear-on-read registers and the interaction with the normal rte_eth_stats_get() call
 function dev:getTxStats()

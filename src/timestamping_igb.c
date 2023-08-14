@@ -1,5 +1,6 @@
 #include <rte_config.h>
 #include <rte_ethdev.h>
+#include <ethdev_driver.h>
 
 #include <e1000_hw.h>
 #include <e1000_ethdev.h>
@@ -10,6 +11,7 @@
 
 int libmoon_igb_reset_timecounters(uint32_t port_id) {
 	RTE_ETH_VALID_PORTID_OR_ERR_RET(port_id, -ENODEV);
+	// TODO: Check if there is a way to retrive this info without including driver stuff
 	struct rte_eth_dev* dev = &rte_eth_devices[port_id];
 	struct e1000_adapter* adapter = (struct e1000_adapter*) dev->data->dev_private;
 	libmoon_reset_timecounter(&adapter->systime_tc);

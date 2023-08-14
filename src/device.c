@@ -1,5 +1,7 @@
 #include <rte_config.h>
 #include <rte_ethdev.h> 
+#include <ethdev_driver.h>
+#include <bus_pci_driver.h>
 #include <rte_mempool.h>
 #include <rte_ether.h>
 #include <rte_cycles.h>
@@ -65,77 +67,80 @@ int dpdk_configure_device(struct libmoon_device_config* cfg) {
 	bool is_i40e_device = strcmp("net_i40e", driver) == 0;
 	struct rte_eth_dev_info dev_info;
 	rte_eth_dev_info_get(cfg->port, &dev_info);
+	// Commented this out because it was moved from rte_ethdev.h to the private header ethdev_driver.h in v22.11
+	// https://github.com/DPDK/dpdk/commit/5007ac13189dc4ee126ab1c0e0d3e728634ed0bd
 	// TODO: make fdir configurable
-	struct rte_fdir_conf fdir_conf = {
-		.mode = RTE_FDIR_MODE_PERFECT,
-		.pballoc = RTE_FDIR_PBALLOC_64K,
-		.status = RTE_FDIR_REPORT_STATUS,
-		.mask = {
-			.vlan_tci_mask = 0x0,
-			.ipv4_mask = {
-				.src_ip = 0,
-				.dst_ip = 0,
-			},
-			.ipv6_mask = {
-				.src_ip = {0,0,0,0},
-				.dst_ip = {0,0,0,0},
-			},
-			.src_port_mask = 0,
-			.dst_port_mask = 0,
-			.mac_addr_byte_mask = 0,
-			.tunnel_type_mask = 0,
-			.tunnel_id_mask = 0,
-		},
-		.flex_conf = {
-			.nb_payloads = 1,
-			.nb_flexmasks = 1,
-			.flex_set = {
-				[0] = {
-					.type = RTE_ETH_RAW_PAYLOAD,
-					// i40e requires to use all 16 values here, otherwise it just fails
-					.src_offset = { 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57 },
-				}
-			},
-			.flex_mask = {
-				[0] = {
-					// ixgbe *only* accepts RTE_ETH_FLOW_UNKNOWN, i40e accepts any value other than that
-					// other drivers don't really seem to care...
-					// WTF?
-					// any other value is apparently an error for this undocumented field
-					.flow_type = is_i40e_device ? RTE_ETH_FLOW_NONFRAG_IPV4_UDP : RTE_ETH_FLOW_UNKNOWN,
-					.mask = { [0] = 0xFF, [1] = 0xFF }
-				}
-			},
-		},
-		.drop_queue = 63,
-	};
+	// struct rte_fdir_conf fdir_conf = {
+	// 	.mode = RTE_FDIR_MODE_PERFECT,
+	// 	.pballoc = RTE_FDIR_PBALLOC_64K,
+	// 	.status = RTE_FDIR_REPORT_STATUS,
+	// 	.mask = {
+	// 		.vlan_tci_mask = 0x0,
+	// 		.ipv4_mask = {
+	// 			.src_ip = 0,
+	// 			.dst_ip = 0,
+	// 		},
+	// 		.ipv6_mask = {
+	// 			.src_ip = {0,0,0,0},
+	// 			.dst_ip = {0,0,0,0},
+	// 		},
+	// 		.src_port_mask = 0,
+	// 		.dst_port_mask = 0,
+	// 		.mac_addr_byte_mask = 0,
+	// 		.tunnel_type_mask = 0,
+	// 		.tunnel_id_mask = 0,
+	// 	},
+	// 	.flex_conf = {
+	// 		.nb_payloads = 1,
+	// 		.nb_flexmasks = 1,
+	// 		.flex_set = {
+	// 			[0] = {
+	// 				.type = RTE_ETH_RAW_PAYLOAD,
+	// 				// i40e requires to use all 16 values here, otherwise it just fails
+	// 				.src_offset = { 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57 },
+	// 			}
+	// 		},
+	// 		.flex_mask = {
+	// 			[0] = {
+	// 				// ixgbe *only* accepts RTE_ETH_FLOW_UNKNOWN, i40e accepts any value other than that
+	// 				// other drivers don't really seem to care...
+	// 				// WTF?
+	// 				// any other value is apparently an error for this undocumented field
+	// 				.flow_type = is_i40e_device ? RTE_ETH_FLOW_NONFRAG_IPV4_UDP : RTE_ETH_FLOW_UNKNOWN,
+	// 				.mask = { [0] = 0xFF, [1] = 0xFF }
+	// 			}
+	// 		},
+	// 	},
+	// 	.drop_queue = 63,
+	// };
 
 	struct rte_eth_rss_conf rss_conf = {
 		.rss_key = NULL,
 		.rss_key_len = 0,
 		.rss_hf = cfg->rss_mask & dev_info.flow_type_rss_offloads,
 	};
+	// DEV_RX_OFFLOAD_JUMBO_FRAME deprecated in https://github.com/DPDK/dpdk/commit/b563c1421282a1ec6038e5d26b4cd4fcbb01ada1
 	uint64_t rx_offloads = (cfg->disable_offloads ?
-		(DEV_RX_OFFLOAD_JUMBO_FRAME | DEV_RX_OFFLOAD_TIMESTAMP)
-		: (DEV_RX_OFFLOAD_CHECKSUM | (cfg->strip_vlan ? DEV_RX_OFFLOAD_VLAN_STRIP : 0) | DEV_RX_OFFLOAD_VLAN_EXTEND | DEV_RX_OFFLOAD_JUMBO_FRAME | DEV_RX_OFFLOAD_TIMESTAMP))
+		(RTE_ETH_RX_OFFLOAD_TIMESTAMP)
+		: (RTE_ETH_RX_OFFLOAD_CHECKSUM | (cfg->strip_vlan ? RTE_ETH_RX_OFFLOAD_VLAN_STRIP : 0) | RTE_ETH_RX_OFFLOAD_VLAN_EXTEND | RTE_ETH_RX_OFFLOAD_TIMESTAMP))
 		& dev_info.rx_offload_capa;
 	uint64_t tx_offloads = (cfg->disable_offloads ?
-		DEV_TX_OFFLOAD_MBUF_FAST_FREE
-		: (DEV_TX_OFFLOAD_VLAN_INSERT | DEV_TX_OFFLOAD_IPV4_CKSUM | DEV_TX_OFFLOAD_UDP_CKSUM | DEV_TX_OFFLOAD_TCP_CKSUM | DEV_TX_OFFLOAD_MBUF_FAST_FREE))
+		RTE_ETH_TX_OFFLOAD_MBUF_FAST_FREE
+		: (RTE_ETH_TX_OFFLOAD_VLAN_INSERT | RTE_ETH_TX_OFFLOAD_IPV4_CKSUM | RTE_ETH_TX_OFFLOAD_UDP_CKSUM | RTE_ETH_TX_OFFLOAD_TCP_CKSUM | RTE_ETH_TX_OFFLOAD_MBUF_FAST_FREE))
 		& dev_info.tx_offload_capa;
 	struct rte_eth_conf port_conf = {
 		.rxmode = {
-			.mq_mode = cfg->enable_rss ? ETH_MQ_RX_RSS : ETH_MQ_RX_NONE,
-			.split_hdr_size = 0,
-			.offloads = rx_offloads,
-			.max_rx_pkt_len = dev_info.max_rx_pktlen
+			.mq_mode = cfg->enable_rss ? RTE_ETH_MQ_RX_RSS : RTE_ETH_MQ_RX_NONE,
+			.mtu = 0,
+			.max_lro_pkt_size = 0,
+			.offloads = rx_offloads
 		},
 		.txmode = {
-			.mq_mode = ETH_MQ_TX_NONE,
+			.mq_mode = RTE_ETH_MQ_TX_NONE,
 			.offloads = tx_offloads
 		},
-		.fdir_conf = fdir_conf,
-		.link_speeds = ETH_LINK_SPEED_AUTONEG,
+		// .fdir_conf = fdir_conf,
+		.link_speeds = RTE_ETH_LINK_SPEED_AUTONEG,
 	  	.rx_adv_conf = {
 			.rss_conf = rss_conf,
 		}
@@ -174,6 +179,7 @@ int dpdk_configure_device(struct libmoon_device_config* cfg) {
 		}
 	}
 	rc = rte_eth_dev_start(cfg->port);
+	// TODO: Check if there is a way to retrive this info without including driver stuff
 	if (RTE_DEV_TO_PCI(dev_info.device)) {
 		registers[cfg->port] = (uint8_t*) RTE_DEV_TO_PCI(dev_info.device)->mem_resource[0].addr;
 	} else {
@@ -182,10 +188,13 @@ int dpdk_configure_device(struct libmoon_device_config* cfg) {
 	return rc;
 }
 
-void* dpdk_get_eth_dev(int port) {
-	return &rte_eth_devices[port];
-}
+// TODO: Check if there is a way to retrive this info without including driver stuff
+// Seems to be unused
+// void* dpdk_get_eth_dev(int port) {
+// 	return &rte_eth_devices[port];
+// }
 
+// TODO: Check if there is a way to retrive this info without including driver stuff
 int dpdk_get_pci_function(int port) {
 	struct rte_eth_dev_info dev_info;
 	rte_eth_dev_info_get(port, &dev_info);
@@ -203,7 +212,7 @@ const char* dpdk_get_driver_name(int port) {
 }
 
 uint64_t dpdk_get_mac_addr(int port, char* buf) {
-	struct ether_addr addr;
+	struct rte_ether_addr addr;
 	rte_eth_macaddr_get(port, &addr);
 	if (buf) {
 		sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X", addr.addr_bytes[0], addr.addr_bytes[1], addr.addr_bytes[2], addr.addr_bytes[3], addr.addr_bytes[4], addr.addr_bytes[5]);
@@ -211,6 +220,7 @@ uint64_t dpdk_get_mac_addr(int port, char* buf) {
 	return addr.addr_bytes[0] | (addr.addr_bytes[1] << 8) | (addr.addr_bytes[2] << 16) | ((uint64_t) addr.addr_bytes[3] << 24) | ((uint64_t) addr.addr_bytes[4] << 32) | ((uint64_t) addr.addr_bytes[5] << 40);
 }
 
+// TODO: Check if there is a way to retrive this info without including driver stuff
 uint32_t dpdk_get_pci_id(uint16_t port) {
 	struct rte_eth_dev_info dev_info;
 	rte_eth_dev_info_get(port, &dev_info);
@@ -220,6 +230,7 @@ uint32_t dpdk_get_pci_id(uint16_t port) {
 	return RTE_DEV_TO_PCI(dev_info.device)->id.vendor_id << 16 | RTE_DEV_TO_PCI(dev_info.device)->id.device_id;
 }
 
+// TODO: Check if there is a way to retrive this info without including driver stuff
 uint8_t dpdk_get_socket(uint16_t port) {
 	struct rte_eth_dev_info dev_info;
 	rte_eth_dev_info_get(port, &dev_info);
@@ -289,7 +300,8 @@ uint16_t dpdk_receive_with_timestamps_software(uint16_t port_id, uint16_t queue_
 		uint16_t rx = rte_eth_rx_burst(port_id, queue_id, rx_pkts, nb_pkts);
 		uint16_t prev_pkt_size = 0;
 		for (int i = 0; i < rx; i++) {
-			rx_pkts[i]->udata64 = tsc + prev_pkt_size * cycles_per_byte;
+			// TODO: disabled for first tests; remove udata also in lua later
+			// rx_pkts[i]->udata64 = tsc + prev_pkt_size * cycles_per_byte;
 			prev_pkt_size = rx_pkts[i]->pkt_len + 24;
 		}
 		if (rx > 0) {

@@ -93,35 +93,37 @@ local function readCtr48(id, addr, last)
 	return last + diff
 end
 
-function dev:getRxStats()
-	local port = dpdkc.dpdk_get_pci_function(self.id)
-	-- unicast, multicast, and broadcast packets
-	self.uprc = readCtr32(self.id, GLPRT_UPRCL[port], self.uprc)
-	self.mprc = readCtr32(self.id, GLPRT_MPRCL[port], self.mprc)
-	self.bprc = readCtr32(self.id, GLPRT_BPRCL[port], self.bprc)
-	-- octets
-	self.gorc = readCtr48(self.id, GLPRT_GORCL[port], self.gorc)
-	return self.uprc + self.mprc + self.bprc - self.initPkts, self.gorc - self.initBytes
-end
+-- Let's hope that the issues were fixed in DPDK
+-- function dev:getRxStats()
+-- 	local port = dpdkc.dpdk_get_pci_function(self.id)
+-- 	-- unicast, multicast, and broadcast packets
+-- 	self.uprc = readCtr32(self.id, GLPRT_UPRCL[port], self.uprc)
+-- 	self.mprc = readCtr32(self.id, GLPRT_MPRCL[port], self.mprc)
+-- 	self.bprc = readCtr32(self.id, GLPRT_BPRCL[port], self.bprc)
+-- 	-- octets
+-- 	self.gorc = readCtr48(self.id, GLPRT_GORCL[port], self.gorc)
+-- 	return self.uprc + self.mprc + self.bprc - self.initPkts, self.gorc - self.initBytes
+-- end
 
 dev.txStatsIgnoreCrc = true
 
-function dev:init()
-	self.uprc = 0
-	self.mprc = 0
-	self.bprc = 0
-	self.gorc = 0
-	-- these stats are unforunately not reset to 0 when the device is initialized
-	-- the datasheet claims that the register can be cleared by writing 1s into them
-	-- but that doesn't work on any of my XL710-based NICs...
-	-- rte_eth_stats_reset also doesn't do anything
-	local port = dpdkc.dpdk_get_pci_function(self.id)
-	self.initPkts = readCtr32(self.id, GLPRT_UPRCL[port], 0)
-	              + readCtr32(self.id, GLPRT_MPRCL[port], 0)
-	              + readCtr32(self.id, GLPRT_BPRCL[port], 0)
-	self.initBytes = readCtr48(self.id, GLPRT_GORCL[port], 0)
-	self:store()
-end
+-- function dev:init()
+-- 	self.uprc = 0
+-- 	self.mprc = 0
+-- 	self.bprc = 0
+-- 	self.gorc = 0
+-- 	-- these stats are unforunately not reset to 0 when the device is initialized
+-- 	-- the datasheet claims that the register can be cleared by writing 1s into them
+-- 	-- but that doesn't work on any of my XL710-based NICs...
+-- 	-- rte_eth_stats_reset also doesn't do anything
+-- 	-- Let's hope that the issues were fixed in DPDK
+-- 	local port = dpdkc.dpdk_get_pci_function(self.id)
+-- 	self.initPkts = readCtr32(self.id, GLPRT_UPRCL[port], 0)
+-- 	              + readCtr32(self.id, GLPRT_MPRCL[port], 0)
+-- 	              + readCtr32(self.id, GLPRT_BPRCL[port], 0)
+-- 	self.initBytes = readCtr48(self.id, GLPRT_GORCL[port], 0)
+-- 	self:store()
+-- end
 
 
 ffi.cdef[[

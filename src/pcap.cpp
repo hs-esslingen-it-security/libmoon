@@ -39,7 +39,8 @@ extern "C" {
 		}
 		res->pkt_len = src->incl_len;
 		res->data_len = copy_len + zero_fill_len;
-		res->udata64 = src->ts_sec * 1000000ULL + src->ts_usec;
+		// TODO: disabled for first tests
+		// res->udata64 = src->ts_sec * 1000000ULL + src->ts_usec;
 		uint8_t* data = rte_pktmbuf_mtod(res, uint8_t*);
 		memcpy(data, &src->data, copy_len);
 		memset(data + copy_len, 0, zero_fill_len);

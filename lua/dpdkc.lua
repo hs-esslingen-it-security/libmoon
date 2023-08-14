@@ -289,10 +289,10 @@ ffi.cdef[[
 	void rte_eth_promiscuous_enable(uint8_t port);
 	void rte_eth_promiscuous_disable(uint8_t port);
 	uint8_t dpdk_get_socket(uint8_t port);
-	void* dpdk_get_eth_dev(int port);
+	// void* dpdk_get_eth_dev(int port);
 	void* dpdk_get_i40e_dev(int port);
 	int dpdk_get_i40e_vsi_seid(int port);
-	uint8_t dpdk_get_pci_function(uint8_t port);
+	// uint8_t dpdk_get_pci_function(uint8_t port);
 	int dpdk_get_max_ports();
 	int rte_eth_dev_mac_addr_add(uint8_t port, void* mac, uint32_t pool);
 	int rte_eth_dev_mac_addr_remove(uint8_t port, void* mac);
