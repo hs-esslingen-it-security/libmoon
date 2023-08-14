@@ -4,7 +4,7 @@
 FLAGS=""
 
 #OPTIONS is filled with options for cmake
-OPTIONS=''
+OPTIONS='-DCMAKE_EXPORT_COMPILE_COMMANDS=1'
 MLX5=false
 MLX4=false
 MOON=false
@@ -52,21 +52,25 @@ NUM_CPUS=$(cat /proc/cpuinfo  | grep "processor\\s: " | wc -l)
 (
 cd deps/luajit
 make -j $NUM_CPUS BUILDMODE=static 'CFLAGS=-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT'
-make install DESTDIR=$(pwd)
+make install PREFIX=$(pwd)/../../lib-build/luajit/
 )
 
 (
 cd deps/dpdk
 #build DPDK with the right configuration
-make config T=x86_64-native-linux-gcc O=x86_64-native-linux-gcc
-sed -ri 's,(CONFIG_RTE_LIBRTE_IEEE1588=).*,\1y,' x86_64-native-linux-gcc/.config
-if ${MLX5} ; then
-	sed -ri 's,(MLX5_PMD=).*,\1y,' x86_64-native-linux-gcc/.config
-fi
-if ${MLX4} ; then
-	sed -ri 's,(MLX4_PMD=).*,\1y,' x86_64-native-linux-gcc/.config
-fi
-make -j $NUM_CPUS O=x86_64-native-linux-gcc
+meson setup --prefix="$(pwd)/../../lib-build/dpdk/" -Denable_driver_sdk=true build
+cd build
+ninja
+meson install
+# make config T=x86_64-native-linux-gcc O=x86_64-native-linux-gcc
+# sed -ri 's,(CONFIG_RTE_LIBRTE_IEEE1588=).*,\1y,' x86_64-native-linux-gcc/.config
+# if ${MLX5} ; then
+# 	sed -ri 's,(MLX5_PMD=).*,\1y,' x86_64-native-linux-gcc/.config
+# fi
+# if ${MLX4} ; then
+# 	sed -ri 's,(MLX4_PMD=).*,\1y,' x86_64-native-linux-gcc/.config
+# fi
+# make -j $NUM_CPUS O=x86_64-native-linux-gcc
 )
 
 (
@@ -86,13 +90,22 @@ make
 )
 
 (
+cd deps/tbb
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX="$(pwd)/../../../lib-build/tbb/" -DTBB_TEST=OFF -S .. -B .
+cmake --build . -j $NUM_CPUS
+cmake --install .
+)
+
+(
 if ! ${MOON}
 then
 	cd build
 else	
 	cd ../build
 fi
-cmake ${OPTIONS}..
+cmake ${OPTIONS} ..
 make -j $NUM_CPUS
 )
 
