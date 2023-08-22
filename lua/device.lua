@@ -17,7 +17,7 @@ local eth        = require "proto.ethernet"
 local E          = require "syscall".c.E
 
 function mod.numDevices()
-	return dpdkc.rte__avail();
+	return dpdkc.rte_eth_dev_count_avail();
 end
 
 local dev = {}
