@@ -51,17 +51,19 @@ NUM_CPUS=$(cat /proc/cpuinfo  | grep "processor\\s: " | wc -l)
 
 (
 cd deps/luajit
-make -j $NUM_CPUS BUILDMODE=static 'CFLAGS=-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT'
-make install PREFIX=$(pwd)/../../lib-build/luajit/
+# BUILDMODE=static 'CFLAGS=-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT'
+make -j $NUM_CPUS 'CFLAGS=-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT'
+sudo make install
 )
 
 (
 cd deps/dpdk
 #build DPDK with the right configuration
-meson setup --prefix="$(pwd)/../../lib-build/dpdk/" -Denable_driver_sdk=true build
+meson setup -Denable_driver_sdk=true build
 cd build
-ninja
-meson install
+meson compile
+sudo meson install
+sudo ldconfig
 # make config T=x86_64-native-linux-gcc O=x86_64-native-linux-gcc
 # sed -ri 's,(CONFIG_RTE_LIBRTE_IEEE1588=).*,\1y,' x86_64-native-linux-gcc/.config
 # if ${MLX5} ; then
@@ -87,15 +89,16 @@ fi
 (
 cd deps/highwayhash
 make
+sudo make install
 )
 
 (
 cd deps/tbb
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX="$(pwd)/../../../lib-build/tbb/" -DTBB_TEST=OFF -S .. -B .
+cmake -DTBB_TEST=OFF -S .. -B .
 cmake --build . -j $NUM_CPUS
-cmake --install .
+sudo cmake --install .
 )
 
 (
@@ -109,8 +112,8 @@ cmake ${OPTIONS} ..
 make -j $NUM_CPUS
 )
 
-echo Trying to bind interfaces, this will fail if you are not root
-echo Try "sudo ./bind-interfaces.sh" if this step fails
-./bind-interfaces.sh ${FLAGS}
+# echo Trying to bind interfaces, this will fail if you are not root
+# echo Try "sudo ./bind-interfaces.sh" if this step fails
+# ./bind-interfaces.sh ${FLAGS}
 )
 
