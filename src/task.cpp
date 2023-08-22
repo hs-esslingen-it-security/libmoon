@@ -37,7 +37,7 @@ namespace libmoon {
 		lua_State* L = luaL_newstate();
 		luaL_openlibs(L);
 		luaL_dostring(L, (std::string("package.path = ") + build_lua_path() + " .. package.path" ).c_str());
-		if (luaL_dostring(L, "require '" LIBMOON_LUA_MAIN_MODULE "'")) {
+		if (luaL_dostring(L, ("require '" + lua_main_module + "'").c_str())) {
 			std::cerr << "Could not run main script: " << lua_tostring(L, -1) << std::endl;
 			std::abort();
 		}

@@ -16,6 +16,7 @@ extern "C" {
 }
 
 #include "main.hpp"
+#include "config.h"
 #include "task.hpp"
 #include "lifecycle.hpp"
 
@@ -23,6 +24,17 @@ namespace libmoon {
 
 	const char* base_dir;
 	const char* extra_lua_path;
+
+	// Default value for lua main module path
+	std::string lua_main_module = "main";
+
+
+	/*
+	 Override the main lua module that is executed by default on startup.
+	 */
+	void set_lua_main_module(std::string main_module) {
+		lua_main_module = main_module;
+	}
 
 	void find_base_dir_fail() {
 		std::cerr << "Could not find base dir" << std::endl;
