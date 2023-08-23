@@ -108,6 +108,8 @@ library(
     'moon',
     src_files,
     dependencies: dependencies,
+    # Export all (not only used) symbols so that LuaJIT can access them
+    link_args: ['-rdynamic'],
     install: true,
     # install_rpath: '$ORIGIN/../../../dpdk/lib/x86_64-linux-gnu:$ORIGIN/../../../luajit/lib:$ORIGIN/../../../tbb/lib'
     # install_rpath: '/home/markus/git/MoonGen/libmoon/lib-build/dpdk/lib/x86_64-linux-gnu:/home/markus/git/MoonGen/libmoon/lib-build/luajit/lib:/home/markus/git/MoonGen/libmoon/lib-build/tbb/lib'
