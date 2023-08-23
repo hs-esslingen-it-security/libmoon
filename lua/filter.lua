@@ -57,27 +57,6 @@ enum rte_filter_op {
 };
 
 /**
- * MAC filter type
- */
-enum rte_mac_filter_type {
-	RTE_MAC_PERFECT_MATCH = 1, /**< exact match of MAC addr. */
-	RTE_MACVLAN_PERFECT_MATCH, /**< exact match of MAC addr and VLAN ID. */
-	RTE_MAC_HASH_MATCH, /**< hash match of MAC addr. */
-	/** hash match of MAC addr and exact match of VLAN ID. */
-	RTE_MACVLAN_HASH_MATCH,
-};
-
-/**
- * MAC filter info
- */
-struct rte_eth_mac_filter {
-	uint8_t is_vf; /**< 1 for VF, 0 for port dev */
-	uint16_t dst_id; /**< VF ID, available when is_vf is 1*/
-	enum rte_mac_filter_type filter_type; /**< MAC filter type */
-	struct ether_addr mac_addr;
-};
-
-/**
  * Define all structures for Ethertype Filter type.
  */
 
@@ -88,24 +67,10 @@ struct rte_eth_mac_filter {
  * RTE_ETH_FILTER_DELETE and RTE_ETH_FILTER_GET operations.
  */
 struct rte_eth_ethertype_filter {
-	struct ether_addr mac_addr;   /**< Mac address to match. */
+	struct rte_ether_addr mac_addr;   /**< Mac address to match. */
 	uint16_t ether_type;          /**< Ether type to match */
 	uint16_t flags;               /**< Flags from RTE_ETHTYPE_FLAGS_* */
 	uint16_t queue;               /**< Queue assigned to when match*/
-};
-
-/**
- *  A structure used to define the flex filter entry
- *  to support RTE_ETH_FILTER_FLEXIBLE with RTE_ETH_FILTER_ADD,
- *  RTE_ETH_FILTER_DELETE and RTE_ETH_FILTER_GET operations.
- */
-struct rte_eth_flex_filter {
-	uint16_t len;
-	uint8_t bytes[128];  /**< flex bytes in big endian.*/
-	uint8_t mask[16];    /**< if mask bit is 1b, do
-					not compare corresponding byte. */
-	uint8_t priority;
-	uint16_t queue;       /**< Queue assigned to when match. */
 };
 
 /**
@@ -114,8 +79,8 @@ struct rte_eth_flex_filter {
  * RTE_ETH_FILTER_DELETE and RTE_ETH_FILTER_GET operations.
  */
 struct rte_eth_syn_filter {
-	uint8_t hig_pri;     /**< 1 - higher priority than other filters,
-				  0 - lower priority. */
+	/** 1 - higher priority than other filters, 0 - lower priority */
+	uint8_t hig_pri;
 	uint16_t queue;      /**< Queue assigned to when match */
 };
 
@@ -164,20 +129,21 @@ enum rte_tunnel_iptype {
  */
 
 enum rte_eth_tunnel_type {
-	RTE_TUNNEL_TYPE_NONE = 0,
-	RTE_TUNNEL_TYPE_VXLAN,
-	RTE_TUNNEL_TYPE_GENEVE,
-	RTE_TUNNEL_TYPE_TEREDO,
-	RTE_TUNNEL_TYPE_NVGRE,
-	RTE_TUNNEL_TYPE_IP_IN_GRE,
-	RTE_L2_TUNNEL_TYPE_E_TAG,
-	RTE_TUNNEL_TYPE_VXLAN_GPE,
-	RTE_TUNNEL_TYPE_MAX,
+	RTE_ETH_TUNNEL_TYPE_NONE = 0,
+	RTE_ETH_TUNNEL_TYPE_VXLAN,
+	RTE_ETH_TUNNEL_TYPE_GENEVE,
+	RTE_ETH_TUNNEL_TYPE_TEREDO,
+	RTE_ETH_TUNNEL_TYPE_NVGRE,
+	RTE_ETH_TUNNEL_TYPE_IP_IN_GRE,
+	RTE_ETH_L2_TUNNEL_TYPE_E_TAG,
+	RTE_ETH_TUNNEL_TYPE_VXLAN_GPE,
+	RTE_ETH_TUNNEL_TYPE_ECPRI,
+	RTE_ETH_TUNNEL_TYPE_MAX,
 };
 
 struct rte_eth_tunnel_filter_conf {
-	struct ether_addr outer_mac;    /**< Outer MAC address to match. */
-	struct ether_addr inner_mac;    /**< Inner MAC address to match. */
+	struct rte_ether_addr outer_mac;    /**< Outer MAC address to match. */
+	struct rte_ether_addr inner_mac;    /**< Inner MAC address to match. */
 	uint16_t inner_vlan;            /**< Inner VLAN to match. */
 	enum rte_tunnel_iptype ip_type; /**< IP address type. */
 	/** Outer destination IP address to match if ETH_TUNNEL_FILTER_OIP
@@ -192,26 +158,6 @@ struct rte_eth_tunnel_filter_conf {
 	enum rte_eth_tunnel_type tunnel_type; /**< Tunnel Type. */
 	uint32_t tenant_id;     /**< Tenant ID to match. VNI, GRE key... */
 	uint16_t queue_id;      /**< Queue assigned to if match. */
-};
-
-/**
- * Global eth device configuration type.
- */
-enum rte_eth_global_cfg_type {
-	RTE_ETH_GLOBAL_CFG_TYPE_UNKNOWN = 0,
-	RTE_ETH_GLOBAL_CFG_TYPE_GRE_KEY_LEN,
-	RTE_ETH_GLOBAL_CFG_TYPE_MAX,
-};
-
-/**
- * Global eth device configuration.
- */
-struct rte_eth_global_cfg {
-	enum rte_eth_global_cfg_type cfg_type; /**< Global config type. */
-	union {
-		uint8_t gre_key_len; /**< Valid GRE key length in byte. */
-		uint64_t reserved; /**< Reserve space for future use. */
-	} cfg;
 };
 
 
@@ -382,7 +328,7 @@ struct rte_eth_sctpv6_flow {
  * A structure used to define the input for MAC VLAN flow
  */
 struct rte_eth_mac_vlan_flow {
-	struct ether_addr mac_addr;  /**< Mac address to match. */
+	struct rte_ether_addr mac_addr;  /**< Mac address to match. */
 };
 
 /**
@@ -402,7 +348,7 @@ struct rte_eth_tunnel_flow {
 	enum rte_eth_fdir_tunnel_type tunnel_type; /**< Tunnel type to match. */
 	/** Tunnel ID to match. TNI, VNI... in big endian. */
 	uint32_t tunnel_id;
-	struct ether_addr mac_addr;                /**< Mac address to match. */
+	struct rte_ether_addr mac_addr;                /**< Mac address to match. */
 };
 
 /**
@@ -557,7 +503,7 @@ struct rte_eth_fdir_flex_conf {
 	uint16_t nb_flexmasks; /**< The number of following mask */
 	struct rte_eth_flex_payload_cfg flex_set[RTE_ETH_PAYLOAD_MAX];
 	/**< Flex payload configuration for each payload type */
-	struct rte_eth_fdir_flex_mask flex_mask[23];
+	struct rte_eth_fdir_flex_mask flex_mask[24];
 	/**< Flex mask configuration for each flow type */
 };
 
@@ -627,102 +573,20 @@ struct rte_eth_fdir_stats {
 };
 
 /**
- * Flow Director filter information types.
- */
-enum rte_eth_fdir_filter_info_type {
-	RTE_ETH_FDIR_FILTER_INFO_TYPE_UNKNOWN = 0,
-	/** Flow Director filter input set configuration */
-	RTE_ETH_FDIR_FILTER_INPUT_SET_SELECT,
-	RTE_ETH_FDIR_FILTER_INFO_TYPE_MAX,
-};
-
-/**
- * A structure used to set FDIR filter information, to support filter type
- * of 'RTE_ETH_FILTER_FDIR' RTE_ETH_FDIR_FILTER_INPUT_SET_SELECT operation.
- */
-struct rte_eth_fdir_filter_info {
-	enum rte_eth_fdir_filter_info_type info_type; /**< Information type */
-	/** Details of fdir filter information */
-	union {
-		/** Flow Director input set configuration per port */
-		struct rte_eth_input_set_conf input_set_conf;
-	} info;
-};
-
-/**
- * Hash filter information types.
- * - RTE_ETH_HASH_FILTER_SYM_HASH_ENA_PER_PORT is for getting/setting the
- *   information/configuration of 'symmetric hash enable' per port.
- * - RTE_ETH_HASH_FILTER_GLOBAL_CONFIG is for getting/setting the global
- *   configurations of hash filters. Those global configurations are valid
- *   for all ports of the same NIC.
- * - RTE_ETH_HASH_FILTER_INPUT_SET_SELECT is for setting the global
- *   hash input set fields
- */
-enum rte_eth_hash_filter_info_type {
-	RTE_ETH_HASH_FILTER_INFO_TYPE_UNKNOWN = 0,
-	/** Symmetric hash enable per port */
-	RTE_ETH_HASH_FILTER_SYM_HASH_ENA_PER_PORT,
-	/** Configure globally for hash filter */
-	RTE_ETH_HASH_FILTER_GLOBAL_CONFIG,
-	/** Global Hash filter input set configuration */
-	RTE_ETH_HASH_FILTER_INPUT_SET_SELECT,
-	RTE_ETH_HASH_FILTER_INFO_TYPE_MAX,
-};
-
-/**
- * A structure used to set or get global hash function configurations which
- * include symmetric hash enable per flow type and hash function type.
- * Each bit in sym_hash_enable_mask[] indicates if the symmetric hash of the
- * corresponding flow type is enabled or not.
- * Each bit in valid_bit_mask[] indicates if the corresponding bit in
- * sym_hash_enable_mask[] is valid or not. For the configurations gotten, it
- * also means if the flow type is supported by hardware or not.
+ * Hash function types.
  */
 enum rte_eth_hash_function {
 	RTE_ETH_HASH_FUNCTION_DEFAULT = 0,
-	RTE_ETH_HASH_FUNCTION_TOEPLITZ, 
-	RTE_ETH_HASH_FUNCTION_SIMPLE_XOR, 
+	RTE_ETH_HASH_FUNCTION_TOEPLITZ, /**< Toeplitz */
+	RTE_ETH_HASH_FUNCTION_SIMPLE_XOR, /**< Simple XOR */
+	/**
+	 * Symmetric Toeplitz: src, dst will be replaced by
+	 * xor(src, dst). For the case with src/dst only,
+	 * src or dst address will xor with zero pair.
+	 */
+	RTE_ETH_HASH_FUNCTION_SYMMETRIC_TOEPLITZ,
 	RTE_ETH_HASH_FUNCTION_MAX,
 };
-
-struct rte_eth_hash_global_conf {
-	enum rte_eth_hash_function hash_func; /**< Hash function type */
-	/** Bit mask for symmetric hash enable per flow type */
-	uint64_t sym_hash_enable_mask[1];
-	/** Bit mask indicates if the corresponding bit is valid */
-	uint64_t valid_bit_mask[1];
-};
-
-/**
- * A structure used to set or get hash filter information, to support filter
- * type of 'RTE_ETH_FILTER_HASH' and its operations.
- */
-struct rte_eth_hash_filter_info {
-	enum rte_eth_hash_filter_info_type info_type; /**< Information type */
-	/** Details of hash filter information */
-	union {
-		/** For RTE_ETH_HASH_FILTER_SYM_HASH_ENA_PER_PORT */
-		uint8_t enable;
-		/** Global configurations of hash filter */
-		struct rte_eth_hash_global_conf global_conf;
-		/** Global configurations of hash filter input set */
-		struct rte_eth_input_set_conf input_set_conf;
-	} info;
-};
-
-/**
- * l2 tunnel configuration.
- */
-struct rte_eth_l2_tunnel_conf {
-	enum rte_eth_tunnel_type l2_tunnel_type;
-	uint16_t ether_type; /* ether type in l2 header */
-	uint32_t tunnel_id; /* port tag id for e-tag */
-	uint16_t vf_id; /* VF id for tag insertion */
-	uint32_t pool; /* destination pool for tag based forwarding */
-};
-
-int rte_eth_dev_filter_ctrl(uint16_t port_id, enum rte_filter_type filter_type, enum rte_filter_op filter_op, void *arg);
 ]]
 
 local RTE_ETHTYPE_FLAGS_MAC  = 1
@@ -770,26 +634,27 @@ local C = ffi.C
 
 function dev:l2Filter(etype, queue)
 	-- mlx5 based device do not support the ethertype filter
-	if self.USE_GENERIC_FILTER then 
-		self:l2GenericFilter(etype, queue)
-	else	
-		if type(queue) == "table" then
-			if queue.dev.id ~= self.id then
-				log:fatal("Queue must belong to the device being configured")
-			end
-			queue = queue.qid
-		end
-		local flags = 0
-		if queue == self.DROP then
-			flags = RTE_ETHTYPE_FLAGS_DROP
-			log:err("DROP")
-		end
-		local filter = ffi.new("struct rte_eth_ethertype_filter", { ether_type = etype, flags = 0, queue = queue })
-		local ok = C.rte_eth_dev_filter_ctrl(self.id, C.RTE_ETH_FILTER_ETHERTYPE, C.RTE_ETH_FILTER_ADD, filter)
-		if ok ~= 0 and ok ~= -38 then -- -38 means duplicate filter for some reason
-			log:warn("l2 filter error: " .. strError(ok))
-		end
-	end
+	-- if self.USE_GENERIC_FILTER then 
+	self:l2GenericFilter(etype, queue)
+	-- TODO: disabled because rte_eth_dev_filter_ctrl is not available anymore; also remove this in the other functions in this file
+	-- else	
+	-- 	if type(queue) == "table" then
+	-- 		if queue.dev.id ~= self.id then
+	-- 			log:fatal("Queue must belong to the device being configured")
+	-- 		end
+	-- 		queue = queue.qid
+	-- 	end
+	-- 	local flags = 0
+	-- 	if queue == self.DROP then
+	-- 		flags = RTE_ETHTYPE_FLAGS_DROP
+	-- 		log:err("DROP")
+	-- 	end
+	-- 	local filter = ffi.new("struct rte_eth_ethertype_filter", { ether_type = etype, flags = 0, queue = queue })
+	-- 	local ok = C.rte_eth_dev_filter_ctrl(self.id, C.RTE_ETH_FILTER_ETHERTYPE, C.RTE_ETH_FILTER_ADD, filter)
+	-- 	if ok ~= 0 and ok ~= -38 then -- -38 means duplicate filter for some reason
+	-- 		log:warn("l2 filter error: " .. strError(ok))
+	-- 	end
+	-- end
 end
 
 

@@ -662,13 +662,13 @@ local function buildEthStatsStruct(n)
 		uint64_t ierrors;   
 		uint64_t oerrors;   
 		uint64_t rx_nombuf; 
-		uint64_t q_ipackets[%d];
-		uint64_t q_opackets[%d];
-		uint64_t q_ibytes[%d];
-		uint64_t q_obytes[%d];
-		uint64_t q_errors[%d];
+		uint64_t q_ipackets[$];
+		uint64_t q_opackets[$];
+		uint64_t q_ibytes[$];
+		uint64_t q_obytes[$];
+		uint64_t q_errors[$];
 	}
-	]]):format(n, n, n, n, n))
+	]]), n, n, n, n, n)
 end
 
 --- Get ethernet statistics.
