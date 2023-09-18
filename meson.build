@@ -1,14 +1,8 @@
-# meson setup build2 --prefix="$(pwd)/lib-build/libmoon/" --pkg-config-path ./lib-build/dpdk/lib/x86_64-linux-gnu/pkgconfig/,./lib-build/luajit/lib/pkgconfig/,./lib-build/tbb/lib/pkgconfig/
-
 project(
     'libmoon',
     'c',
     'cpp',
     version: '1.0.0'
-    # default_options: {
-    # 	'prefix': meson.current_source_dir() + '/lib-build/libmoon/',
-    # 	'pkg_config_path': './lib-build/dpdk/lib/x86_64-linux-gnu/pkgconfig/,./lib-build/luajit/lib/pkgconfig/,./lib-build/tbb/lib/pkgconfig/'
-    # }
 )
 
 pkg = import('pkgconfig')
@@ -78,7 +72,6 @@ dep_dpdk_additional = declare_dependency(
 dep_dpdk = dependency('libdpdk', version: '=23.07.0')
 dep_luajit = dependency('luajit', version: '=2.1.0-beta3')
 dep_tbb = dependency('tbb', version: '=2021.10.0')
-# dep_highwayhash = dependency('highwayhash', method: 'system')
 
 dep_highwayhash_cxx = cxx.find_library(
     'highwayhash',
@@ -112,8 +105,6 @@ library(
     link_args: ['-rdynamic'],
     cpp_args: ['-std=c++11'],
     install: true,
-    # install_rpath: '$ORIGIN/../../../dpdk/lib/x86_64-linux-gnu:$ORIGIN/../../../luajit/lib:$ORIGIN/../../../tbb/lib'
-    # install_rpath: '/home/markus/git/MoonGen/libmoon/lib-build/dpdk/lib/x86_64-linux-gnu:/home/markus/git/MoonGen/libmoon/lib-build/luajit/lib:/home/markus/git/MoonGen/libmoon/lib-build/tbb/lib'
 )
 
 install_headers(header_files, subdir: 'libmoon')
