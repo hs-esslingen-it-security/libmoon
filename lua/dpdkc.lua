@@ -496,5 +496,26 @@ ffi.cdef[[
 	void libmoon_sync_clocks(uint8_t port1, uint8_t port2, uint32_t timl, uint32_t timh, uint32_t adjl, uint32_t adjh);
 ]]
 
+-- Structs that depend on definitions above
+local n = ffi.C.dpdk_get_rte_queue_stat_cntrs_num()
+
+ffi.cdef([[
+	struct rte_eth_stats {
+		uint64_t ipackets;  
+		uint64_t opackets;  
+		uint64_t ibytes;    
+		uint64_t obytes;    
+		uint64_t imissed;
+		uint64_t ierrors;   
+		uint64_t oerrors;   
+		uint64_t rx_nombuf; 
+		uint64_t q_ipackets[$];
+		uint64_t q_opackets[$];
+		uint64_t q_ibytes[$];
+		uint64_t q_obytes[$];
+		uint64_t q_errors[$];
+	}
+]], n, n, n, n, n)
+
 return ffi.C
 

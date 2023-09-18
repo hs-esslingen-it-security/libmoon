@@ -514,6 +514,8 @@ function dev:getTxTimestamp(queue, wait)
 		local res = dpdkc.rte_eth_timesync_read_tx_timestamp(self.id, ts)
 		if res == 0 then
 			return tonumber(ts.tv_sec) * 10^9 + tonumber(ts.tv_nsec)
+		else
+			log:error("Error reading tx timestamp: %d", res)
 		end
 	end)
 end
@@ -649,38 +651,13 @@ int rte_eth_xstats_get_by_id(uint8_t port_id, const uint64_t * ids, uint64_t * v
 
 ]]
 
-local ethStatsType
-
-local function buildEthStatsStruct(n)
-	return ffi.typeof(([[
-	struct {
-		uint64_t ipackets;  
-		uint64_t opackets;  
-		uint64_t ibytes;    
-		uint64_t obytes;    
-		uint64_t imissed;
-		uint64_t ierrors;   
-		uint64_t oerrors;   
-		uint64_t rx_nombuf; 
-		uint64_t q_ipackets[$];
-		uint64_t q_opackets[$];
-		uint64_t q_ibytes[$];
-		uint64_t q_obytes[$];
-		uint64_t q_errors[$];
-	}
-	]]), n, n, n, n, n)
-end
-
 --- Get ethernet statistics.
 --- Warning: the exact meaning of the results may vary between NICs, especially when packets are dropped due to full rx queues.
 --- Also, they may sometimes be clear-on-read and sometimes running totals; stats are just wildly inconsistent in DPDK.
 --- In case of clear-on-read counters, there will be interactions between this function and get[Rx|Tx]Stats
 --- Counting packets at the application-level might be a good idea if you want to support different NICs.
 function dev:getStats()
-	if not ethStatsType then
-		ethStatsType = buildEthStatsStruct(dpdkc.dpdk_get_rte_queue_stat_cntrs_num())
-	end
-	local stats = ethStatsType()
+	local stats = ffi.new("struct rte_eth_stats")
 	dpdkc.rte_eth_stats_get(self.id, stats)
 	return stats
 end
@@ -693,11 +670,8 @@ do
 	--- libmoon tries to correct this inconsistency, currently tested with ixgbe, i40e and igb NICs.
 	--- @return packets, bytes
 	function dev:getTxStats()
-		if not ethStatsType then
-			ethStatsType = buildEthStatsStruct(dpdkc.dpdk_get_rte_queue_stat_cntrs_num())
-		end
 		if not stats then
-			stats = ethStatsType()
+			stats = ffi.new("struct rte_eth_stats")
 		end
 		dpdkc.rte_eth_stats_get(self.id, stats)
 		-- in case you are wondering: the precision of a double starts the become a minor problem after 4.17 days at 100 gbit/s
@@ -713,11 +687,8 @@ do
 	--- Use dev:getStats() to get the full statistics exposed by DPDK.
 	--- @return packets, bytes
 	function dev:getRxStats()
-		if not ethStatsType then
-			ethStatsType = buildEthStatsStruct(dpdkc.dpdk_get_rte_queue_stat_cntrs_num())
-		end
 		if not stats then
-			stats = ethStatsType()
+			stats = ffi.new("struct rte_eth_stats")
 		end
 		dpdkc.rte_eth_stats_get(self.id, stats)
 		-- the meaning of the packet stats is completely inconsistent between drivers
